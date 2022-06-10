@@ -15,3 +15,6 @@ cat >> /etc/hosts <<EOF
 192.168.5.22  worker-2
 192.168.5.30  lb
 EOF
+
+# Allow port 22 host
+systemctl disable --now ufw > /dev/null 2>&1

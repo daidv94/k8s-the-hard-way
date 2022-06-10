@@ -23,14 +23,27 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   # config.vm.box = "base"
-  # config.vm.box = "spox/ubuntu-arm"
   config.vm.box = "bytesguy/ubuntu-server-20.04-arm64"
   config.vm.box_version = "1.0.0"
-
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
   config.vm.box_check_update = false
+  # config.vm.network :forwarded_port, guest: 22, host: 2200, id: "ssh", disabled: true
+  # config.ssh.connect_timeout = 30
+  config.ssh.keep_alive      = true
+  config.ssh.insert_key      = false
+  # config.ssh.username = "vagrant"
+  # config.ssh.password = "vagrant"
+  # config.ssh.private_key_path =  ["~/.vagrant.d/insecure_private_key"]
+  config.ssh.private_key_path =  ["~/.vagrant.d/insecure_private_key","~/.ssh/finx_id_ed25519"]
+  config.vm.provision :shell, privileged: false do |s|
+    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/finx_id_ed25519.pub").first.strip
+    s.inline = <<-SHELL
+      echo #{ssh_pub_key} >> /home/$USER/.ssh/authorized_keys
+      sudo bash -c "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+    SHELL
+  end
 
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
@@ -61,12 +74,13 @@ Vagrant.configure("2") do |config|
         # Name shown in the GUI
         node.vm.provider "vmware_desktop" do |v|
             # v.name = "kubernetes-ha-master-#{i}"
+            # v.vmx["ethernet0.pcislotnumber"] = "33"
             v.vmx["memsize"] = "2048"
             v.vmx["numvcpus"] = "2"
         end
         node.vm.hostname = "master-#{i}"
         node.vm.network :private_network, ip: IP_NW + "#{MASTER_IP_START + i}"
-        node.vm.network "forwarded_port", guest: 22, host: "#{2710 + i}"
+        # node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
 
         node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
           s.args = ["enp1s1"]
@@ -80,13 +94,13 @@ Vagrant.configure("2") do |config|
   # Provision Load Balancer Node
   config.vm.define "loadbalancer" do |node|
     node.vm.provider "vmware_desktop" do |v|
-        # v.name = "kubernetes-ha-lb"
+        # v.vmx["ethernet0.pcislotnumber"] = "33"
         v.vmx["memsize"] = "512"
         v.vmx["numvcpus"] = "1"
     end
     node.vm.hostname = "loadbalancer"
     node.vm.network :private_network, ip: IP_NW + "#{LB_IP_START}"
-    node.vm.network "forwarded_port", guest: 22, host: 2730
+    # node.vm.network "forwarded_port", guest: 22, host: 2730
 
     node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
       s.args = ["enp1s1"]
@@ -101,12 +115,13 @@ Vagrant.configure("2") do |config|
     config.vm.define "worker-#{i}" do |node|
         node.vm.provider "vmware_desktop" do |v|
             #v.name = "kubernetes-ha-worker-#{i}"
+            # v.vmx["ethernet0.pcislotnumber"] = "33"
             v.vmx["memsize"] = "512"
             v.vmx["numvcpus"] = "1"
         end
         node.vm.hostname = "worker-#{i}"
         node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
-        node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
+        # node.vm.network "forwarded_port", guest: 22, host: "#{2740 + i}"
 
         node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
           s.args = ["enp1s1"]
@@ -115,7 +130,6 @@ Vagrant.configure("2") do |config|
         node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
         node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker.sh"
         node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
-
     end
   end
 end

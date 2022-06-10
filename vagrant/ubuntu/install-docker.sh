@@ -14,7 +14,7 @@
 #     && apt-get install -y docker-ce=$(apt-cache madison docker-ce | grep 18.06 | head -1 | awk '{print $3}')
 
 # Update the apt package index and install packages to allow apt to use a repository over HTTPS:
-apt-get update
+apt-get update -y
 
 apt-get install \
     ca-certificates \
@@ -29,6 +29,6 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-apt-get update
+apt-get update -y
 
 apt-get install -y docker-ce docker-ce-cli containerd.io
