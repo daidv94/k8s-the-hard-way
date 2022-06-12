@@ -17,4 +17,5 @@ cat >> /etc/hosts <<EOF
 EOF
 
 # Allow port 22 host
+swapoff -a
 systemctl disable --now ufw > /dev/null 2>&1
